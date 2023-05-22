@@ -90,7 +90,7 @@ def listar_tabela_precos_consoles():
 
 def listar_jogos():
     cursor = conexao.cursor()
-    cursor.execute("SELECT * FROM jogos ORDER BY id")
+    cursor.execute("SELECT * FROM jogos WHERE quantidade > 0 ORDER BY id")
     jogos = cursor.fetchall()
     if not jogos:
         print("Não existem jogos cadastrados!")
@@ -108,7 +108,7 @@ def listar_consoles():
         for console in consoles:
             print(f"ID: {console[0]}, Nome: {console[1]}")    
 
-def cadastrar_aluguel_jogo():
+def realizar_aluguel_jogo():
     print('\n========== Cadastrando Aluguel de Jogo  ==========\n')
 
     cpf = input("Digite o cpf do cliente: ")
@@ -144,19 +144,32 @@ def cadastrar_aluguel_jogo():
     id_jogos = input().split(",") #['1', '2', '3', '4']
 
     if len(id_jogos) > qtd_jogos_limite:
-        print(f"A quantidade de jogos deve ser ({qtd_jogos_limite})")
+        print(f"A quantidade de jogos escolhida deve ser ({qtd_jogos_limite})")
         return
 
-    #Inserir um novo registro na tabela jogos_alugados para cada jogoe escolhido
+    #Inserir um novo registro na tabela jogos_alugados para cada jogoe escolhido e realizar o update da quantidade
     for jogo_id in id_jogos:
         sql_jogos_alugados = "INSERT INTO jogos_alugados (aluguel_id, jogo_id) VALUES (%s, %s)"
         valores_jogos_alugados = (aluguel_id, jogo_id,)
         cursor.execute(sql_jogos_alugados, valores_jogos_alugados)
+
+        sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s" #consultar quantidade de jogos e pegar a quantidade
+        valores_select_jogo = (jogo_id,)
+        cursor.execute(sql_select_jogo, valores_select_jogo)
+        quantidade_atual = cursor.fetchone()
+        
+        #atualizar quantidade
+        quantidade_atual = quantidade_atual[0]
+        nova_quantidade = quantidade_atual-1
+        sql_update_quantidade = "UPDATE jogos SET quantidade = %s WHERE id = %s"
+        valores_update_quantidade = (nova_quantidade, jogo_id)
+        cursor.execute(sql_update_quantidade, valores_update_quantidade)
+
         conexao.commit()
 
     print("Aluguel cadastrado com sucesso!")
 
-def cadastrar_aluguel_console():
+def realizar_aluguel_console():
     print('\n========== Cadastrando Aluguel de Console  ==========\n')
 
     cpf = input("Digite o cpf do cliente: ")
@@ -201,6 +214,65 @@ def cadastrar_aluguel_console():
 
     print("Aluguel cadastrado com sucesso!")
 
+def realizar_devolucao_jogo():
+    #2- fazer um de realizar baixa de devolução do jogo alugado (update quantidade)
+    print('\n========== Devolução de Jogo  ==========\n')
+    cpf = input("Digite o CPF do cliente: ")
+    listar_jogos()
+    jogos_ids = input("Digite os IDs dos jogos separados por vírgula: ").split(",")
+
+    cursor = conexao.cursor()
+    #verificar se o cliente tem aluguel
+    for jogo_id in jogos_ids:
+        # Verificar se o cliente possui aluguéis em aberto com o jogo selecionado
+        sql_select_alugueis = """
+            SELECT alugueis.id AS "id do aluguel", alugueis.data_reserva, alugueis.data_entrega, alugueis.cliente_cpf,
+                   jogos.titulo AS "Jogo", precos_jogos.valor AS "total"
+            FROM alugueis
+            JOIN jogos_alugados ON alugueis.id = jogos_alugados.aluguel_id
+            JOIN jogos ON jogos_alugados.jogo_id = jogos.id
+            JOIN precos_jogos ON jogos.id = precos_jogos.id
+            WHERE alugueis.cliente_cpf = %s AND jogos.id = %s
+        """
+
+    valores_select_alugueis = (cpf, jogo_id,)
+    cursor.execute(sql_select_alugueis, valores_select_alugueis)
+    alugueis = cursor.fetchall()
+
+    if not alugueis:
+        print("Esse cliente não realizou nenhum aluguel de jogo")
+        return
+    
+    print("\n========== Aluguéis em aberto do cliente: ==========\n")
+    for aluguel in alugueis:
+        print(f"ID do Aluguel: {aluguel[0]}, Data de Reserva: {aluguel[1]}, Data de Entrega: {aluguel[2]}, CPF do Cliente: {aluguel[3]}")
+        print(f"Jogo: {aluguel[4]}, Valor Total: {aluguel[5]}")
+
+    aluguel_id = input("Digite o ID do aluguel que deseja devolver o jogo: ")
+
+        # Verificar se o jogo está associado ao aluguel selecionado
+    sql_select_jogo_alugado = "SELECT * FROM jogos_alugados WHERE aluguel_id = %s AND jogo_id = %s"
+    valores_select_jogo_alugado = (aluguel_id, jogo_id,)
+    cursor.execute(sql_select_jogo_alugado, valores_select_jogo_alugado)
+    jogo_alugado = cursor.fetchone()
+
+    if jogo_alugado is None:
+        print("ID de jogo inválido para o aluguel selecionado.")
+        return
+    # Atualizar a quantidade do jogo na tabela de jogos
+    sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s"
+    valores_select_jogo = (jogo_id,)
+    cursor.execute(sql_select_jogo, valores_select_jogo)
+    quantidade_atual = cursor.fetchone()[0]
+
+    nova_quantidade = quantidade_atual + 1
+
+    sql_update_quantidade = "UPDATE jogos SET quantidade = %s WHERE id = %s"
+    valores_update_quantidade = (nova_quantidade, jogo_id)
+    cursor.execute(sql_update_quantidade, valores_update_quantidade)
+
+
+
 # Cria uma conexão com o banco de dados
 try:
     conexao = mysql.connector.connect(
@@ -225,6 +297,7 @@ while True:
     print("5 - Cadastrar preços de consoles")
     print("6 - Realizar um aluguel de jogo")
     print("7 - Realizar um aluguel de console")
+    print("8 - Realizar devolução de jogo")
     print("0 - Sair")
 
     opcao = input("Opção escolhida: ")
@@ -240,8 +313,10 @@ while True:
     elif opcao == "5":
         cadastrar_preco_console()
     elif opcao == "6":
-        cadastrar_aluguel_jogo()
+        realizar_aluguel_jogo()
     elif opcao == "7":
-        cadastrar_aluguel_console()                
+        realizar_aluguel_console()
+    elif opcao == "8":
+        realizar_devolucao_jogo()                    
     elif opcao == "0":
         break
