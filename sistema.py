@@ -147,20 +147,24 @@ def realizar_aluguel_jogo():
         print(f"A quantidade de jogos escolhida deve ser ({qtd_jogos_limite})")
         return
 
+    quantidade_jogos = {}
     #Inserir um novo registro na tabela jogos_alugados para cada jogoe escolhido e realizar o update da quantidade
+    for jogo_id in id_jogos:
+        sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s"
+        valores_select_jogo = (jogo_id,)
+        cursor.execute(sql_select_jogo, valores_select_jogo)
+        quantidade_jogo = cursor.fetchone()
+        quantidade_jogos[jogo_id] = quantidade_jogo[0]
+
+
     for jogo_id in id_jogos:
         sql_jogos_alugados = "INSERT INTO jogos_alugados (aluguel_id, jogo_id) VALUES (%s, %s)"
         valores_jogos_alugados = (aluguel_id, jogo_id,)
         cursor.execute(sql_jogos_alugados, valores_jogos_alugados)
-
-        sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s" #consultar quantidade de jogos e pegar a quantidade
-        valores_select_jogo = (jogo_id,)
-        cursor.execute(sql_select_jogo, valores_select_jogo)
-        quantidade_atual = cursor.fetchone()
         
         #atualizar quantidade
-        quantidade_atual = quantidade_atual[0]
-        nova_quantidade = quantidade_atual-1
+        quantidade_atual = quantidade_jogos[jogo_id]
+        nova_quantidade = quantidade_atual - 1
         sql_update_quantidade = "UPDATE jogos SET quantidade = %s WHERE id = %s"
         valores_update_quantidade = (nova_quantidade, jogo_id)
         cursor.execute(sql_update_quantidade, valores_update_quantidade)
@@ -259,6 +263,7 @@ def realizar_devolucao_jogo():
     if jogo_alugado is None:
         print("ID de jogo inválido para o aluguel selecionado.")
         return
+    
     # Atualizar a quantidade do jogo na tabela de jogos
     sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s"
     valores_select_jogo = (jogo_id,)
@@ -271,7 +276,8 @@ def realizar_devolucao_jogo():
     valores_update_quantidade = (nova_quantidade, jogo_id)
     cursor.execute(sql_update_quantidade, valores_update_quantidade)
 
-
+    conexao.commit()
+    print("Devolução realizada com sucesso")
 
 # Cria uma conexão com o banco de dados
 try:
