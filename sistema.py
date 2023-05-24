@@ -1,5 +1,23 @@
 import mysql.connector
-import datetime
+import datetime 
+from colorama import init, Fore
+
+def print_menu_option(number, option):
+    colors = {
+        2: Fore.YELLOW,
+        3: Fore.BLUE,
+        4: Fore.GREEN,
+        5: Fore.CYAN,
+        6: Fore.MAGENTA,
+        7: Fore.MAGENTA,
+        8: Fore.MAGENTA,
+        9: Fore.LIGHTCYAN_EX,
+        10: Fore.LIGHTCYAN_EX,
+        11: Fore.LIGHTCYAN_EX,
+        12: Fore.LIGHTCYAN_EX,
+        0: Fore.RED
+    }
+
 #Cadastrar Cliente
 def cadastrar_cliente():
     print('\n========== Cadastro dos Clientes ==========\n')
@@ -70,43 +88,51 @@ def cadastrar_preco_console():
 
 def listar_tabela_precos():
     cursor = conexao.cursor()
+    print("\n========== TABELA DE PREÇOS JOGOS  ==========")
     cursor.execute("SELECT * FROM precos_jogos ORDER BY id")
     precos_jogos = cursor.fetchall()
     if not precos_jogos:
         print("Não existem preços de jogos cadastrados!")
     else:
         for precos_jogo in precos_jogos:
-            print(f"ID: {precos_jogo[0]}, Plataforma: {precos_jogo[1]}, Quantidade de Jogos:{precos_jogo[2]}, Dias: {precos_jogo[3]}, Valor: {precos_jogo[4]}")
+            print(f"\nID: {precos_jogo[0]}, Plataforma: {precos_jogo[1]}, Quantidade de Jogos:{precos_jogo[2]}, Dias: {precos_jogo[3]}, Valor: {precos_jogo[4]}")
+            print("="*100)
 
 def listar_tabela_precos_consoles():
     cursor = conexao.cursor()
+    print("\n========== TABELA DE PREÇOS CONSOLES  ==========")
     cursor.execute("SELECT * FROM precos_consoles ORDER BY id")
     precos_consoles = cursor.fetchall()
     if not precos_consoles:
         print("Não existem preços de consoles cadastrados!")
     else:
         for precos_console in precos_consoles:
-            print(f"ID: {precos_console[0]}, Console: {precos_console[1]}, Horas:{precos_console[2]}, Valor: {precos_console[3]}")
+            print(f"\nID: {precos_console[0]}, Console: {precos_console[1]}, Horas:{precos_console[2]}, Valor: {precos_console[3]}")
+            print("="*100)
 
 def listar_jogos():
     cursor = conexao.cursor()
-    cursor.execute("SELECT * FROM jogos WHERE quantidade > 0 ORDER BY id")
+    print("\n========== JOGOS DO PALÁCIO  ==========")
+    cursor.execute("SELECT * FROM jogos WHERE quantidade >= 0 ORDER BY id")
     jogos = cursor.fetchall()
     if not jogos:
         print("Não existem jogos cadastrados!")
     else:
         for jogo in jogos:
-            print(f"ID: {jogo[0]}, Título: {jogo[1]}, Plataforma:{jogo[2]}, gênero: {jogo[3]}, quantidade: {jogo[4]}")   
+            print(f"\nID: {jogo[0]}, Título: {jogo[1]}, Plataforma:{jogo[2]}, gênero: {jogo[3]}, quantidade: {jogo[4]}")
+            print("="*100)   
 
 def listar_consoles():
     cursor = conexao.cursor()
+    print('\n========== CONSOLES DO PALÁCIO  ==========')
     cursor.execute("SELECT * FROM consoles ORDER BY id")
     consoles = cursor.fetchall()
     if not consoles:
-        print("Não existem jogos cadastrados!")
+        print("Não existem consoles cadastrados!")
     else:
         for console in consoles:
-            print(f"ID: {console[0]}, Nome: {console[1]}")    
+            print(f"\nID: {console[0]}, Nome: {console[1]}")
+            print("="*20)    
 
 def realizar_aluguel_jogo():
     print('\n========== Cadastrando Aluguel de Jogo  ==========\n')
@@ -239,42 +265,50 @@ def realizar_devolucao_jogo():
             WHERE alugueis.cliente_cpf = %s AND jogos.id = %s
         """
 
-    valores_select_alugueis = (cpf, jogo_id,)
-    cursor.execute(sql_select_alugueis, valores_select_alugueis)
-    alugueis = cursor.fetchall()
+        valores_select_alugueis = (cpf, jogo_id,)
+        cursor.execute(sql_select_alugueis, valores_select_alugueis)
+        alugueis = cursor.fetchall()
 
-    if not alugueis:
-        print("Esse cliente não realizou nenhum aluguel de jogo")
-        return
+        if not alugueis:
+            print("Esse cliente não realizou nenhum aluguel de jogo")
+            return
     
-    print("\n========== Aluguéis em aberto do cliente: ==========\n")
-    for aluguel in alugueis:
-        print(f"ID do Aluguel: {aluguel[0]}, Data de Reserva: {aluguel[1]}, Data de Entrega: {aluguel[2]}, CPF do Cliente: {aluguel[3]}")
-        print(f"Jogo: {aluguel[4]}, Valor Total: {aluguel[5]}")
+        print("\n========== Aluguéis em aberto do cliente: ==========\n")
+        for aluguel in alugueis:
+            print(f"ID do Aluguel: {aluguel[0]}, Data de Reserva: {aluguel[1]}, Data de Entrega: {aluguel[2]}, CPF do Cliente: {aluguel[3]}")
+            print(f"Jogo: {aluguel[4]}, Valor Total: {aluguel[5]}")
 
-    aluguel_id = input("Digite o ID do aluguel que deseja devolver o jogo: ")
+        aluguel_id = input("Digite o ID do aluguel que deseja devolver o jogo: ")
 
-        # Verificar se o jogo está associado ao aluguel selecionado
-    sql_select_jogo_alugado = "SELECT * FROM jogos_alugados WHERE aluguel_id = %s AND jogo_id = %s"
-    valores_select_jogo_alugado = (aluguel_id, jogo_id,)
-    cursor.execute(sql_select_jogo_alugado, valores_select_jogo_alugado)
-    jogo_alugado = cursor.fetchone()
+            # Verificar se o jogo está associado ao aluguel selecionado
+        sql_select_jogo_alugado = "SELECT * FROM jogos_alugados WHERE aluguel_id = %s AND jogo_id = %s"
+        valores_select_jogo_alugado = (aluguel_id, jogo_id,)
+        cursor.execute(sql_select_jogo_alugado, valores_select_jogo_alugado)
+        jogo_alugado = cursor.fetchone()
 
-    if jogo_alugado is None:
-        print("ID de jogo inválido para o aluguel selecionado.")
-        return
-    
-    # Atualizar a quantidade do jogo na tabela de jogos
-    sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s"
-    valores_select_jogo = (jogo_id,)
-    cursor.execute(sql_select_jogo, valores_select_jogo)
-    quantidade_atual = cursor.fetchone()[0]
+        if jogo_alugado is None:
+            print("ID de jogo inválido para o aluguel selecionado.")
+            return
+        
+        # Atualizar a quantidade do jogo na tabela de jogos
+        sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s"
+        valores_select_jogo = (jogo_id,)
+        cursor.execute(sql_select_jogo, valores_select_jogo)
+        quantidade_atual = cursor.fetchone()[0]
 
-    nova_quantidade = quantidade_atual + 1
+        nova_quantidade = quantidade_atual + 1
 
-    sql_update_quantidade = "UPDATE jogos SET quantidade = %s WHERE id = %s"
-    valores_update_quantidade = (nova_quantidade, jogo_id)
-    cursor.execute(sql_update_quantidade, valores_update_quantidade)
+        sql_update_quantidade = "UPDATE jogos SET quantidade = %s WHERE id = %s"
+        valores_update_quantidade = (nova_quantidade, jogo_id,)
+        cursor.execute(sql_update_quantidade, valores_update_quantidade)
+
+        sql_delete_jogos_alugados = "DELETE FROM jogos_alugados WHERE aluguel_id = %s"
+        valores_delete_jogos_alugados = (aluguel_id,)
+        cursor.execute(sql_delete_jogos_alugados, valores_delete_jogos_alugados)
+
+        sql_delete = "DELETE FROM alugueis WHERE id = %s"
+        valores_delete = (aluguel_id,)
+        cursor.execute(sql_delete, valores_delete)
 
     conexao.commit()
     print("Devolução realizada com sucesso")
@@ -294,20 +328,32 @@ except:
 
 
 
+def print_menu_option(number, option, color):
+    print(f"{color}{number} - {option}")
+
+init(autoreset=True)
+
 while True:
-    print("\nEscolha uma opção: ")
-    print("1 - Cadastrar Cliente")
-    print("2 - Cadastrar jogo")
-    print("3 - Cadastrar console")
-    print("4 - Cadastrar preços de jogos")
-    print("5 - Cadastrar preços de consoles")
-    print("6 - Realizar um aluguel de jogo")
-    print("7 - Realizar um aluguel de console")
-    print("8 - Realizar devolução de jogo")
-    print("0 - Sair")
+    print("\n========== Escolha uma opção: ==========")
+    print_menu_option(1, "Cadastrar Cliente", Fore.LIGHTYELLOW_EX)
+    print_menu_option(2, "Cadastrar jogo", Fore.LIGHTYELLOW_EX)
+    print_menu_option(3, "Cadastrar console", Fore.LIGHTYELLOW_EX)
+    print_menu_option(4, "Cadastrar preços de jogos", Fore.LIGHTYELLOW_EX)
+    print_menu_option(5, "Cadastrar preços de consoles", Fore.LIGHTYELLOW_EX)
+    print("="*40)
+    print_menu_option(6, "Realizar um aluguel de jogo", Fore.MAGENTA)
+    print_menu_option(7, "Realizar um aluguel de console", Fore.MAGENTA)
+    print_menu_option(8, "Realizar devolução de jogo", Fore.MAGENTA)
+    print("="*40)
+    print_menu_option(9, "Listar jogos", Fore.LIGHTCYAN_EX)
+    print_menu_option(10, "Listar consoles", Fore.LIGHTCYAN_EX)
+    print_menu_option(11, "Listar tabela de preços dos jogos", Fore.LIGHTCYAN_EX)
+    print_menu_option(12, "Listar tabela de preços dos consoles", Fore.LIGHTCYAN_EX)
+    print("="*40)
+    print_menu_option(0, "Sair", Fore.RED)
 
     opcao = input("Opção escolhida: ")
-    
+
     if opcao == "1":
         cadastrar_cliente()
     elif opcao == "2":
@@ -323,6 +369,15 @@ while True:
     elif opcao == "7":
         realizar_aluguel_console()
     elif opcao == "8":
-        realizar_devolucao_jogo()                    
+        realizar_devolucao_jogo()
+    elif opcao == "9":
+        listar_jogos() 
+    elif opcao == "10":
+        listar_consoles() 
+    elif opcao == "11":
+        listar_tabela_precos()
+    elif opcao == "12":
+        listar_tabela_precos_consoles()                                  
     elif opcao == "0":
+        print(".......SISTEMA ENCERRADO.......")
         break
