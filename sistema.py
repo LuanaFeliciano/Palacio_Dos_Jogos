@@ -142,7 +142,7 @@ def realizar_aluguel_jogo():
     listar_tabela_precos()
 
     preco_id = input("ID da forma de aluguel escolhida: ")
-    #verificar se o ID da tabela preço escolhida é válido
+    #verific se o ID da tabela preço escolhida é válido
     cursor = conexao.cursor()
     sql = "SELECT * FROM precos_jogos WHERE id = %s"
     valores = (preco_id,)
@@ -157,7 +157,7 @@ def realizar_aluguel_jogo():
     duracao_dias = preco_jogo[3]
     data_entrega = datetime.datetime.now() + datetime.timedelta(days=duracao_dias)
 
-    #Inserir um novo registro na tabela alugueis
+    #Inseri um novo registro na tabela alugueis
     cursor = conexao.cursor()
     sql = "INSERT INTO alugueis (data_entrega, cliente_cpf, preco_jogo_id) VALUES (%s, %s, %s)"
     valores = (data_entrega, cpf, preco_id,)
@@ -174,7 +174,7 @@ def realizar_aluguel_jogo():
         return
 
     quantidade_jogos = {}
-    #Inserir um novo registro na tabela jogos_alugados para cada jogoe escolhido e realizar o update da quantidade
+    #Inseri um novo registro na tabela jogos_alugados para cada jogoe escolhido e realizei o update da quantidade]
     for jogo_id in id_jogos:
         sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s"
         valores_select_jogo = (jogo_id,)
@@ -188,7 +188,7 @@ def realizar_aluguel_jogo():
         valores_jogos_alugados = (aluguel_id, jogo_id,)
         cursor.execute(sql_jogos_alugados, valores_jogos_alugados)
         
-        #atualizar quantidade
+        #atualizei a quantidade dos jogos, ja que foi emprestado fica -1 do estoque
         quantidade_atual = quantidade_jogos[jogo_id]
         nova_quantidade = quantidade_atual - 1
         sql_update_quantidade = "UPDATE jogos SET quantidade = %s WHERE id = %s"
@@ -207,7 +207,7 @@ def realizar_aluguel_console():
     listar_tabela_precos_consoles()
 
     preco_id = input("ID da forma de aluguel escolhida: ")
-    #verificar se o ID da tabela preço escolhida é válido
+    #verifiquei se o ID da tabela preço escolhida é válido
     cursor = conexao.cursor()
     sql = "SELECT * FROM precos_consoles WHERE id = %s"
     valores = (preco_id,)
@@ -223,7 +223,7 @@ def realizar_aluguel_console():
 
     horarioFinal = currentDateAndTime + datetime.timedelta(hours=duracao_horas)
 
-    #Inserir um novo registro na tabela alugueis
+    #Inseri um novo registro na tabela alugueis
     cursor = conexao.cursor()
     sql = "INSERT INTO alugueis (data_entrega, cliente_cpf, preco_console_id) VALUES (%s, %s, %s)"
     valores = (horarioFinal, cpf, preco_id,)
@@ -235,7 +235,7 @@ def realizar_aluguel_console():
     listar_consoles()
     id_consoles = input().split(",") #['1', '2', '3', '4']
 
-    #Inserir um novo registro na tabela jogos_alugados para cada jogoe escolhido
+    #Inseri um novo registro na tabela jogos_alugados para cada jogoe escolhido
     for console_id in id_consoles:
         sql_consoles_alugados = "INSERT INTO consoles_alugados (aluguel_id, console_id) VALUES (%s, %s)"
         valores_consoles_alugados = (aluguel_id, console_id,)
@@ -249,15 +249,15 @@ def realizar_devolucao_jogo():
     print('\n========== Devolução de Jogo  ==========\n')
     cpf = input("Digite o CPF do cliente: ")
     listar_jogos()
-    jogos_ids = input("Digite os IDs dos jogos separados por vírgula: ").split(",")
+    jogos_ids = input("Digite o ID dos jogos separados por vírgula: ").split(",")
 
     cursor = conexao.cursor()
-    #verificar se o cliente tem aluguel
+    # Verificar se o cliente tem aluguel aqui eu percorri a array jogos_ids
     for jogo_id in jogos_ids:
         # Verificar se o cliente possui aluguéis em aberto com o jogo selecionado
         sql_select_alugueis = """
             SELECT alugueis.id AS "id do aluguel", alugueis.data_reserva, alugueis.data_entrega, alugueis.cliente_cpf,
-                   jogos.titulo AS "Jogo", precos_jogos.valor AS "total"
+                jogos.titulo AS "Jogo", precos_jogos.valor AS "total"
             FROM alugueis
             JOIN jogos_alugados ON alugueis.id = jogos_alugados.aluguel_id
             JOIN jogos ON jogos_alugados.jogo_id = jogos.id
@@ -265,14 +265,14 @@ def realizar_devolucao_jogo():
             WHERE alugueis.cliente_cpf = %s AND jogos.id = %s
         """
 
-        valores_select_alugueis = (cpf, jogo_id,)
+        valores_select_alugueis = (cpf, jogo_id)
         cursor.execute(sql_select_alugueis, valores_select_alugueis)
         alugueis = cursor.fetchall()
 
-        if not alugueis:
-            print("Esse cliente não realizou nenhum aluguel de jogo")
-            return
-    
+        if not alugueis: #se nao tiver aluguel do jogo selecionado é pq ele nao fez nenhum
+            print(f"Esse cliente não realizou nenhum aluguel do jogo com ID {jogo_id}")
+            continue
+        #se tiver vai aparecer os alugueis dele e pedir pra digitar o id do aluguel q ele quer devolver
         print("\n========== Aluguéis em aberto do cliente: ==========\n")
         for aluguel in alugueis:
             print(f"ID do Aluguel: {aluguel[0]}, Data de Reserva: {aluguel[1]}, Data de Entrega: {aluguel[2]}, CPF do Cliente: {aluguel[3]}")
@@ -280,38 +280,34 @@ def realizar_devolucao_jogo():
 
         aluguel_id = input("Digite o ID do aluguel que deseja devolver o jogo: ")
 
-            # Verificar se o jogo está associado ao aluguel selecionado
+        # Verifiquei se o jogo está associado ao aluguel selecionado pq vai q ele escolhe errado
         sql_select_jogo_alugado = "SELECT * FROM jogos_alugados WHERE aluguel_id = %s AND jogo_id = %s"
-        valores_select_jogo_alugado = (aluguel_id, jogo_id,)
+        valores_select_jogo_alugado = (aluguel_id, jogo_id)
         cursor.execute(sql_select_jogo_alugado, valores_select_jogo_alugado)
         jogo_alugado = cursor.fetchone()
 
         if jogo_alugado is None:
             print("ID de jogo inválido para o aluguel selecionado.")
-            return
+            continue
         
-        # Atualizar a quantidade do jogo na tabela de jogos
+        # Atualizei a quantidade do jogo na tabela de jogos
         sql_select_jogo = "SELECT quantidade FROM jogos WHERE id = %s"
         valores_select_jogo = (jogo_id,)
         cursor.execute(sql_select_jogo, valores_select_jogo)
         quantidade_atual = cursor.fetchone()[0]
 
-        nova_quantidade = quantidade_atual + 1
+        nova_quantidade = quantidade_atual + 1 
 
-        sql_update_quantidade = "UPDATE jogos SET quantidade = %s WHERE id = %s"
-        valores_update_quantidade = (nova_quantidade, jogo_id,)
+        sql_update_quantidade = "UPDATE jogos SET quantidade = %s WHERE id = %s"#atualizando
+        valores_update_quantidade = (nova_quantidade, jogo_id)
         cursor.execute(sql_update_quantidade, valores_update_quantidade)
 
-        sql_delete_jogos_alugados = "DELETE FROM jogos_alugados WHERE aluguel_id = %s"
-        valores_delete_jogos_alugados = (aluguel_id,)
+        sql_delete_jogos_alugados = "DELETE FROM jogos_alugados WHERE aluguel_id = %s AND jogo_id = %s"#apagando o aluguel do cliente
+        valores_delete_jogos_alugados = (aluguel_id, jogo_id)
         cursor.execute(sql_delete_jogos_alugados, valores_delete_jogos_alugados)
 
-        sql_delete = "DELETE FROM alugueis WHERE id = %s"
-        valores_delete = (aluguel_id,)
-        cursor.execute(sql_delete, valores_delete)
-
     conexao.commit()
-    print("Devolução realizada com sucesso")
+    print("Jogo(s) devolvido(s) com sucesso!")
 
 # Cria uma conexão com o banco de dados
 try:
